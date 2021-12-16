@@ -1,0 +1,18 @@
+name: BigQuery
+
+outputs:
+  - {
+    name: Dataset, type: LocalPath
+  }
+ 
+implementation:
+  container:
+    image: gcr.io/niveustraining/taxi-dataset/get-data:latest
+    command: [
+      python,
+      index.py,
+      --dataset,
+      {
+        outputPath: Dataset
+      }
+    ]

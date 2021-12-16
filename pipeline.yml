@@ -1,0 +1,150 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: chicago-taxi-dataset-
+  annotations: {pipelines.kubeflow.org/kfp_sdk_version: 1.8.10, pipelines.kubeflow.org/pipeline_compilation_time: '2021-12-16T09:33:23.393363',
+    pipelines.kubeflow.org/pipeline_spec: '{"name": "Chicago-taxi-dataset"}'}
+  labels: {pipelines.kubeflow.org/kfp_sdk_version: 1.8.10}
+spec:
+  entrypoint: chicago-taxi-dataset
+  templates:
+  - name: bigquery
+    container:
+      args: []
+      command: [python, index.py, --dataset, /tmp/outputs/Dataset/data]
+      image: gcr.io/niveustraining/taxi-dataset/get-data:latest
+    outputs:
+      artifacts:
+      - {name: bigquery-Dataset, path: /tmp/outputs/Dataset/data}
+    metadata:
+      labels:
+        pipelines.kubeflow.org/kfp_sdk_version: 1.8.10
+        pipelines.kubeflow.org/pipeline-sdk-type: kfp
+        pipelines.kubeflow.org/enable_caching: "true"
+      annotations: {pipelines.kubeflow.org/component_spec: '{"implementation": {"container":
+          {"command": ["python", "index.py", "--dataset", {"outputPath": "Dataset"}],
+          "image": "gcr.io/niveustraining/taxi-dataset/get-data:latest"}}, "name":
+          "BigQuery", "outputs": [{"name": "Dataset", "type": "LocalPath"}]}', pipelines.kubeflow.org/component_ref: '{"digest":
+          "bce0d18db7db70265f162224334f484185c989450a113bad01b06cf74a3d33a7", "url":
+          "components/get-data/get-data.yml"}', pipelines.kubeflow.org/max_cache_staleness: P0D}
+  - name: chicago-taxi-dataset
+    dag:
+      tasks:
+      - {name: bigquery, template: bigquery}
+      - name: feature-scale
+        template: feature-scale
+        dependencies: [preprocess]
+        arguments:
+          artifacts:
+          - {name: preprocess-X-Test, from: '{{tasks.preprocess.outputs.artifacts.preprocess-X-Test}}'}
+          - {name: preprocess-X-Train, from: '{{tasks.preprocess.outputs.artifacts.preprocess-X-Train}}'}
+      - name: prepare-data
+        template: prepare-data
+        dependencies: [bigquery]
+        arguments:
+          artifacts:
+          - {name: bigquery-Dataset, from: '{{tasks.bigquery.outputs.artifacts.bigquery-Dataset}}'}
+      - name: preprocess
+        template: preprocess
+        dependencies: [prepare-data]
+        arguments:
+          artifacts:
+          - {name: prepare-data-X, from: '{{tasks.prepare-data.outputs.artifacts.prepare-data-X}}'}
+          - {name: prepare-data-Y, from: '{{tasks.prepare-data.outputs.artifacts.prepare-data-Y}}'}
+  - name: feature-scale
+    container:
+      args: []
+      command: [python, index.py, --x-train, /tmp/inputs/X_Train/data, --x-test, /tmp/inputs/X_Test/data,
+        --X-train, /tmp/outputs/X_Train_Feature_Scaled/data, --X-test, /tmp/outputs/X_Test_Feature_Scaled/data,
+        --standard-scaler, /tmp/outputs/Standard_Scaler/data]
+      image: gcr.io/niveustraining/taxi-dataset/feature-scale
+    inputs:
+      artifacts:
+      - {name: preprocess-X-Test, path: /tmp/inputs/X_Test/data}
+      - {name: preprocess-X-Train, path: /tmp/inputs/X_Train/data}
+    outputs:
+      artifacts:
+      - {name: feature-scale-Standard-Scaler, path: /tmp/outputs/Standard_Scaler/data}
+      - {name: feature-scale-X-Test-Feature-Scaled, path: /tmp/outputs/X_Test_Feature_Scaled/data}
+      - {name: feature-scale-X-Train-Feature-Scaled, path: /tmp/outputs/X_Train_Feature_Scaled/data}
+    metadata:
+      labels:
+        pipelines.kubeflow.org/kfp_sdk_version: 1.8.10
+        pipelines.kubeflow.org/pipeline-sdk-type: kfp
+        pipelines.kubeflow.org/enable_caching: "true"
+      annotations: {pipelines.kubeflow.org/component_spec: '{"implementation": {"container":
+          {"command": ["python", "index.py", "--x-train", {"inputPath": "X Train"},
+          "--x-test", {"inputPath": "X Test"}, "--X-train", {"outputPath": "X Train
+          Feature Scaled"}, "--X-test", {"outputPath": "X Test Feature Scaled"}, "--standard-scaler",
+          {"outputPath": "Standard Scaler"}], "image": "gcr.io/niveustraining/taxi-dataset/feature-scale"}},
+          "inputs": [{"name": "X Train", "type": "LocalPath"}, {"name": "X Test",
+          "type": "LocalPath"}], "name": "Feature Scale", "outputs": [{"name": "X
+          Train Feature Scaled", "type": "LocalPath"}, {"name": "X Test Feature Scaled",
+          "type": "LocalPath"}, {"name": "Standard Scaler", "type": "LocalPath"}]}',
+        pipelines.kubeflow.org/component_ref: '{"digest": "148e1dcb2e13033d239be3a0abe9299fc2382163a8cb739a6cb95d853418ff8d",
+          "url": "components/feature-scale/feature-scale.yml"}', pipelines.kubeflow.org/max_cache_staleness: P0D}
+  - name: prepare-data
+    container:
+      args: []
+      command: [python, index.py, --dataset, /tmp/inputs/Dataset/data, --X, /tmp/outputs/X/data,
+        --y, /tmp/outputs/Y/data]
+      image: gcr.io/niveustraining/taxi-dataset/data-preparation:latest
+    inputs:
+      artifacts:
+      - {name: bigquery-Dataset, path: /tmp/inputs/Dataset/data}
+    outputs:
+      artifacts:
+      - {name: prepare-data-X, path: /tmp/outputs/X/data}
+      - {name: prepare-data-Y, path: /tmp/outputs/Y/data}
+    metadata:
+      labels:
+        pipelines.kubeflow.org/kfp_sdk_version: 1.8.10
+        pipelines.kubeflow.org/pipeline-sdk-type: kfp
+        pipelines.kubeflow.org/enable_caching: "true"
+      annotations: {pipelines.kubeflow.org/component_spec: '{"implementation": {"container":
+          {"command": ["python", "index.py", "--dataset", {"inputPath": "Dataset"},
+          "--X", {"outputPath": "X"}, "--y", {"outputPath": "Y"}], "image": "gcr.io/niveustraining/taxi-dataset/data-preparation:latest"}},
+          "inputs": [{"name": "Dataset", "type": "LocalPath"}], "name": "Prepare Data",
+          "outputs": [{"name": "X", "type": "LocalPath"}, {"name": "Y", "type": "LocalPath"}]}',
+        pipelines.kubeflow.org/component_ref: '{"digest": "f7c287359982fb8a7818153c1aeacd863892d917abdf72b7a8cefe02cec134b8",
+          "url": "components/data-preparation/data-preparation.yml"}'}
+  - name: preprocess
+    container:
+      args: []
+      command: [python, index.py, --X, /tmp/inputs/X/data, --y, /tmp/inputs/Y/data,
+        --x-train, /tmp/outputs/X_Train/data, --y-train, /tmp/outputs/Y_Train/data,
+        --x-test, /tmp/outputs/X_Test/data, --y-test, /tmp/outputs/Y_Test/data, --column-transformer,
+        /tmp/outputs/Column_Transformer/data]
+      image: gcr.io/niveustraining/taxi-dataset/preprocessing:latest
+    inputs:
+      artifacts:
+      - {name: prepare-data-X, path: /tmp/inputs/X/data}
+      - {name: prepare-data-Y, path: /tmp/inputs/Y/data}
+    outputs:
+      artifacts:
+      - {name: preprocess-Column-Transformer, path: /tmp/outputs/Column_Transformer/data}
+      - {name: preprocess-X-Test, path: /tmp/outputs/X_Test/data}
+      - {name: preprocess-X-Train, path: /tmp/outputs/X_Train/data}
+      - {name: preprocess-Y-Test, path: /tmp/outputs/Y_Test/data}
+      - {name: preprocess-Y-Train, path: /tmp/outputs/Y_Train/data}
+    metadata:
+      labels:
+        pipelines.kubeflow.org/kfp_sdk_version: 1.8.10
+        pipelines.kubeflow.org/pipeline-sdk-type: kfp
+        pipelines.kubeflow.org/enable_caching: "true"
+      annotations: {pipelines.kubeflow.org/component_spec: '{"implementation": {"container":
+          {"command": ["python", "index.py", "--X", {"inputPath": "X"}, "--y", {"inputPath":
+          "Y"}, "--x-train", {"outputPath": "X Train"}, "--y-train", {"outputPath":
+          "Y Train"}, "--x-test", {"outputPath": "X Test"}, "--y-test", {"outputPath":
+          "Y Test"}, "--column-transformer", {"outputPath": "Column Transformer"}],
+          "image": "gcr.io/niveustraining/taxi-dataset/preprocessing:latest"}}, "inputs":
+          [{"name": "X", "type": "LocalPath"}, {"name": "Y", "type": "LocalPath"}],
+          "name": "Preprocess", "outputs": [{"name": "X Train", "type": "LocalPath"},
+          {"name": "Y Train", "type": "LocalPath"}, {"name": "X Test", "type": "LocalPath"},
+          {"name": "Y Test", "type": "LocalPath"}, {"name": "Column Transformer",
+          "type": "LocalPath"}]}', pipelines.kubeflow.org/component_ref: '{"digest":
+          "95915944d1dd9c9c7a7f302a81a3cef504b2374b136fc31dcbea6f2e8931a0c0", "url":
+          "components/preprocessing/preprocessing.yml"}'}
+  arguments:
+    parameters: []
+  serviceAccountName: pipeline-runner

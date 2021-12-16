@@ -1,0 +1,47 @@
+name: Feature Scale
+
+inputs: 
+  - {
+    name: X Train, type: LocalPath
+  }
+  - {
+    name: X Test, type: LocalPath
+  }
+outputs:
+  - {
+    name: X Train Feature Scaled, type: LocalPath
+  }
+  - {
+    name: X Test Feature Scaled, type: LocalPath
+  }
+  - {
+    name: Standard Scaler, type: LocalPath
+  }
+  
+implementation: 
+  container:
+    image: gcr.io/niveustraining/taxi-dataset/feature-scale
+    command: [
+      python,
+      index.py,
+      --x-train,
+      {
+        inputPath: X Train
+      },
+      --x-test,
+      {
+        inputPath: X Test
+      },
+      --X-train,
+      {
+        outputPath: X Train Feature Scaled
+      },
+      --X-test,
+      {
+        outputPath: X Test Feature Scaled
+      },
+      --standard-scaler,
+      {
+        outputPath: Standard Scaler
+      }
+    ]

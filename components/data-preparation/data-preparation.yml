@@ -1,0 +1,35 @@
+name: Prepare Data
+
+inputs:
+    - {
+        name: Dataset, type: LocalPath
+    }
+
+outputs:
+    - {
+        name: X, type: LocalPath
+    }
+
+    - {
+        name: Y, type: LocalPath
+    }
+
+implementation:
+    container:
+        image: gcr.io/niveustraining/taxi-dataset/data-preparation:latest
+        command: [
+            python,
+            index.py,
+            --dataset,
+            {
+                inputPath: Dataset
+            },
+            --X,
+            {
+                outputPath: X
+            },
+            --y,
+            {
+                outputPath: Y
+            }
+        ]

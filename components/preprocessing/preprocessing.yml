@@ -1,0 +1,63 @@
+name: Preprocess
+
+inputs:
+  - {
+    name: X, type: LocalPath
+  }
+
+  - {
+    name: Y, type: LocalPath
+  }
+
+outputs:
+  - {
+    name: X Train, type: LocalPath
+  }
+  - {
+    name: Y Train, type: LocalPath
+  }
+  - {
+    name: X Test, type: LocalPath
+  }
+  - {
+    name: Y Test, type: LocalPath
+  }
+  - {
+    name: Column Transformer, type: LocalPath
+  }
+
+implementation:
+  container:
+    image: gcr.io/niveustraining/taxi-dataset/preprocessing:latest
+    command: [
+      python,
+      index.py,
+      --X,
+      {
+        inputPath: X
+      },
+      --y,
+      {
+        inputPath: Y
+      },
+      --x-train,
+      {
+        outputPath: X Train
+      },
+      --y-train,
+      {
+        outputPath: Y Train
+      },
+      --x-test,
+      {
+        outputPath: X Test
+      },
+      --y-test,
+      {
+        outputPath: Y Test
+      },
+      --column-transformer,
+      {
+        outputPath: Column Transformer
+      }
+    ]
