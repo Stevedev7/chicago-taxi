@@ -26,9 +26,9 @@ with open(args.X_train, 'w') as f:
     dump(dumps(x_test.tolist()), f)
 
 Path(args.X_test).parent.mkdir(exist_ok=True, parents=True)
-with (args.X_test, 'w') as f:
+with open (args.X_test, 'w') as f:
     dump(dumps(x_test.tolist()), f)
 
 Path(args.standard_scaler).parent.mkdir(exist_ok=True, parents=True)
-with open(args.standard_scaler, 'w') as f:
+with open(args.standard_scaler, 'wb') as f:
     pickle.dump(standard_scaler, f)
