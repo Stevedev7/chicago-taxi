@@ -21,9 +21,11 @@ standard_scaler = StandardScaler()
 x_train = standard_scaler.fit_transform(x_train)
 x_test = standard_scaler.transform(x_test)
 
+print(x_train.shape)
+
 Path(args.X_train).parent.mkdir(exist_ok=True, parents=True)
 with open(args.X_train, 'w') as f:
-    dump(dumps(x_test.tolist()), f)
+    dump(dumps(x_train.tolist()), f)
 
 Path(args.X_test).parent.mkdir(exist_ok=True, parents=True)
 with open (args.X_test, 'w') as f:

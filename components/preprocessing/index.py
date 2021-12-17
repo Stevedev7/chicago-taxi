@@ -22,6 +22,10 @@ args = parser.parse_args()
 X = pd.read_csv(args.X)
 y = pd.read_csv(args.y)
 
+print(X.values.shape)
+print(X.company.value_counts().count())
+print(X.payment_type.value_counts().count())
+
 ct = ColumnTransformer(transformers=[('encoder', OneHotEncoder(), [6, 7])], remainder='passthrough')
 X = ct.fit_transform(X.values)
 

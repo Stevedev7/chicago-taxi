@@ -2,12 +2,63 @@ apiVersion: argoproj.io/v1alpha1
 kind: Workflow
 metadata:
   generateName: chicago-taxi-dataset-
-  annotations: {pipelines.kubeflow.org/kfp_sdk_version: 1.8.10, pipelines.kubeflow.org/pipeline_compilation_time: '2021-12-16T09:33:23.393363',
+  annotations: {pipelines.kubeflow.org/kfp_sdk_version: 1.8.10, pipelines.kubeflow.org/pipeline_compilation_time: '2021-12-17T16:49:57.073009',
     pipelines.kubeflow.org/pipeline_spec: '{"name": "Chicago-taxi-dataset"}'}
   labels: {pipelines.kubeflow.org/kfp_sdk_version: 1.8.10}
 spec:
   entrypoint: chicago-taxi-dataset
   templates:
+  - name: ann-test
+    container:
+      args: []
+      command: [python, index.py, --model, /tmp/inputs/Model/data, --x-test, /tmp/inputs/X_Test/data,
+        --y-test, /tmp/inputs/Y_Test/data]
+      image: gcr.io/niveustraining/taxi-dataset/neural-network/test:latest
+    inputs:
+      artifacts:
+      - {name: ann-train-Model, path: /tmp/inputs/Model/data}
+      - {name: preprocess-Y-Test, path: /tmp/inputs/X_Test/data}
+      - {name: feature-scale-X-Test-Feature-Scaled, path: /tmp/inputs/Y_Test/data}
+    metadata:
+      labels:
+        pipelines.kubeflow.org/kfp_sdk_version: 1.8.10
+        pipelines.kubeflow.org/pipeline-sdk-type: kfp
+        pipelines.kubeflow.org/enable_caching: "true"
+      annotations: {pipelines.kubeflow.org/component_spec: '{"implementation": {"container":
+          {"command": ["python", "index.py", "--model", {"inputPath": "Model"}, "--x-test",
+          {"inputPath": "X Test"}, "--y-test", {"inputPath": "Y Test"}], "image":
+          "gcr.io/niveustraining/taxi-dataset/neural-network/test:latest"}}, "inputs":
+          [{"name": "Model", "type": "LocalPath"}, {"name": "X Test", "type": "LocalPath"},
+          {"name": "Y Test", "type": "LocalPath"}], "name": "ANN Test"}', pipelines.kubeflow.org/component_ref: '{"digest":
+          "8b5413d6343cfe32a9a81f3103ee02b20fa113d53dc06ac94000269ae7f1239f", "url":
+          "components/neural-network/test/test.yml"}', pipelines.kubeflow.org/max_cache_staleness: P0D}
+  - name: ann-train
+    container:
+      args: []
+      command: [python, index.py, --x-train, /tmp/inputs/X_Train/data, --y-train,
+        /tmp/inputs/Y_Train/data, --model, /tmp/outputs/Model/data]
+      image: gcr.io/niveustraining/taxi-dataset/neural-network/train:latest
+    inputs:
+      artifacts:
+      - {name: feature-scale-X-Train-Feature-Scaled, path: /tmp/inputs/X_Train/data}
+      - {name: preprocess-Y-Train, path: /tmp/inputs/Y_Train/data}
+    outputs:
+      artifacts:
+      - {name: ann-train-Model, path: /tmp/outputs/Model/data}
+    metadata:
+      labels:
+        pipelines.kubeflow.org/kfp_sdk_version: 1.8.10
+        pipelines.kubeflow.org/pipeline-sdk-type: kfp
+        pipelines.kubeflow.org/enable_caching: "true"
+      annotations: {pipelines.kubeflow.org/component_spec: '{"implementation": {"container":
+          {"command": ["python", "index.py", "--x-train", {"inputPath": "X Train"},
+          "--y-train", {"inputPath": "Y Train"}, "--model", {"outputPath": "Model"}],
+          "image": "gcr.io/niveustraining/taxi-dataset/neural-network/train:latest"}},
+          "inputs": [{"name": "X Train", "type": "LocalPath"}, {"name": "Y Train",
+          "type": "LocalPath"}], "name": "ANN Train", "outputs": [{"name": "Model",
+          "type": "LocalPath"}]}', pipelines.kubeflow.org/component_ref: '{"digest":
+          "43623b2d94b74c13ae84d12c03ccf975cf63b9207d4d028fe1bea881456438cb", "url":
+          "components/neural-network/train/train.yml"}'}
   - name: bigquery
     container:
       args: []
@@ -30,6 +81,21 @@ spec:
   - name: chicago-taxi-dataset
     dag:
       tasks:
+      - name: ann-test
+        template: ann-test
+        dependencies: [ann-train, feature-scale, preprocess]
+        arguments:
+          artifacts:
+          - {name: ann-train-Model, from: '{{tasks.ann-train.outputs.artifacts.ann-train-Model}}'}
+          - {name: feature-scale-X-Test-Feature-Scaled, from: '{{tasks.feature-scale.outputs.artifacts.feature-scale-X-Test-Feature-Scaled}}'}
+          - {name: preprocess-Y-Test, from: '{{tasks.preprocess.outputs.artifacts.preprocess-Y-Test}}'}
+      - name: ann-train
+        template: ann-train
+        dependencies: [feature-scale, preprocess]
+        arguments:
+          artifacts:
+          - {name: feature-scale-X-Train-Feature-Scaled, from: '{{tasks.feature-scale.outputs.artifacts.feature-scale-X-Train-Feature-Scaled}}'}
+          - {name: preprocess-Y-Train, from: '{{tasks.preprocess.outputs.artifacts.preprocess-Y-Train}}'}
       - {name: bigquery, template: bigquery}
       - name: feature-scale
         template: feature-scale
@@ -81,8 +147,8 @@ spec:
           "type": "LocalPath"}], "name": "Feature Scale", "outputs": [{"name": "X
           Train Feature Scaled", "type": "LocalPath"}, {"name": "X Test Feature Scaled",
           "type": "LocalPath"}, {"name": "Standard Scaler", "type": "LocalPath"}]}',
-        pipelines.kubeflow.org/component_ref: '{"digest": "148e1dcb2e13033d239be3a0abe9299fc2382163a8cb739a6cb95d853418ff8d",
-          "url": "components/feature-scale/feature-scale.yml"}', pipelines.kubeflow.org/max_cache_staleness: P0D}
+        pipelines.kubeflow.org/component_ref: '{"digest": "2c8570e7ce2d0177e09cea67016e1bb4c92aef751f95ed6d80bd8c40566daaed",
+          "url": "components/feature-scale/feature-scale.yml"}'}
   - name: prepare-data
     container:
       args: []

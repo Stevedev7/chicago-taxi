@@ -1,0 +1,34 @@
+name: ANN Train
+
+inputs: 
+  - {
+    name: X Train, type: LocalPath
+  }
+  - {
+    name: Y Train, type: LocalPath
+  }
+
+outputs:
+  - {
+    name: Model, type: LocalPath
+  }
+
+implementation:
+  container:
+    image: gcr.io/niveustraining/taxi-dataset/neural-network/train:latest
+    command: [
+      python,
+      index.py,
+      --x-train,
+      {
+        inputPath: X Train
+      },
+      --y-train,
+      {
+        inputPath: Y Train
+      },
+      --model,
+      {
+        outputPath: Model
+      }
+    ]

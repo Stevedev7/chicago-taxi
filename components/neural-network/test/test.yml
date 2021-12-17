@@ -1,0 +1,32 @@
+name: ANN Test
+
+inputs:
+  - {
+    name: Model, type: LocalPath
+  }
+  - {
+    name: X Test, type: LocalPath
+  }
+  - {
+    name: Y Test, type: LocalPath
+  }
+
+implementation:
+  container:
+    image: gcr.io/niveustraining/taxi-dataset/neural-network/test:latest
+    command: [
+      python,
+      index.py,
+      --model,
+      {
+        inputPath: Model
+      },
+      --x-test,
+      {
+        inputPath: X Test
+      },
+      --y-test,
+      {
+        inputPath: Y Test
+      }
+    ]
