@@ -1,4 +1,6 @@
 credentials.json
 *.ipynb
 data.csv
+data
 test.py
+volume

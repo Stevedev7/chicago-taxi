@@ -20,7 +20,7 @@ outputs:
   
 implementation: 
   container:
-    image: gcr.io/niveustraining/taxi-dataset/feature-scale
+    image: gcr.io/niveustraining/taxi-dataset/feature-scale:latest
     command: [
       python,
       index.py,

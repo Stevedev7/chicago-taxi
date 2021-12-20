@@ -1,0 +1,44 @@
+version: '3'
+
+services:
+  big-query: 
+    image: gcr.io/niveustraining/taxi-dataset/get-data:latest
+    volumes:
+      - ./volume/get-data:/tmp/Data:rw
+    command: python index.py --dataset /tmp/Data/data.csv
+
+  prepare-data:
+    image: gcr.io/niveustraining/taxi-dataset/data-preparation:latest
+    volumes:
+      - ./volume/get-data:/tmp/Data/get-data:rw
+      - ./volume/prepare-data:/tmp/Data/prepare-data:rw
+    command: python index.py --dataset /tmp/Data/get-data/data.csv --X /tmp/Data/prepare-data/x.csv --y /tmp/Data/prepare-data/y.csv
+
+  preprocess:
+    image: gcr.io/niveustraining/taxi-dataset/preprocessing:latest
+    volumes:
+      - ./volume/preprocess:/tmp/Data/preprocess:rw
+      - ./volume/prepare-data:/tmp/Data/prepare-data:rw
+    command: python index.py --X /tmp/Data/prepare-data/x.csv --y /tmp/Data/prepare-data/y.csv --x-train /tmp/Data/preprocess/x-train.csv --y-train /tmp/Data/preprocess/y-train.csv --x-test /tmp/Data/preprocess/x-test.csv --y-test /tmp/Data/preprocess/y-test.csv --column-transformer  /tmp/Data/preprocess/column-transformer.pickle
+
+  feature-scale:
+    image: gcr.io/niveustraining/taxi-dataset/feature-scale:latest
+    volumes:
+      - ./volume/preprocess:/tmp/Data/preprocess:rw
+      - ./volume/feature-scale:/tmp/Data/feature-scale:rw
+    command: python index.py --x-train /tmp/Data/preprocess/x-train.csv --x-test /tmp/Data/preprocess/x-test.csv --X-train /tmp/Data/feature-scale/x-train.csv --X-test /tmp/Data/feature-scale/x-test.csv --standard-scaler /tmp/Data/feature-scale/standard-scaler.pickle
+
+  ann-train:
+    image: gcr.io/niveustraining/taxi-dataset/neural-network/train:latest
+    volumes:
+      - ./volume/ann-train:/tmp/Data/ann-train:rw
+      - ./volume/preprocess:/tmp/Data/preprocess:rw
+      - ./volume/feature-scale:/tmp/Data/feature-scale:rw
+    command: python index.py --x-train /tmp/Data/feature-scale/x-train.csv --y-train /tmp/Data/preprocess/y-train.csv --model /tmp/Data/ann-train/model.pickle
+  ann-test:
+    build: ./components/neural-network/test
+    volumes:
+      - ./volume/ann-train:/tmp/Data/ann-train:rw
+      - ./volume/preprocess:/tmp/Data/preprocess:rw
+      - ./volume/feature-scale:/tmp/Data/feature-scale:rw
+    command: python index.py --model /tmp/Data/ann-train/model.pickle --x-test /tmp/Data/feature-scale/x-test.csv --y-test /tmp/Data/preprocess/x-test.csv
