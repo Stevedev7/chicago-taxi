@@ -12,7 +12,7 @@ def taxi_pipeline():
     test = load_component_from_file('components/neural-network/test/test.yml')
 
     get_data_task = get_data()
-    # get_data_task.execution_options.caching_strategy.max_cache_staleness = "P0D"
+    get_data_task.execution_options.caching_strategy.max_cache_staleness = "P0D"
     data_preparation_task = data_preparation(get_data_task.outputs["Dataset"])
     preprocessing_task = preprocessing(data_preparation_task.outputs['X'], data_preparation_task.outputs['y'])
     # preprocessing_task.execution_options.caching_strategy.max_cache_staleness = "P0D" # Disable cache

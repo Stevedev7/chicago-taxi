@@ -36,9 +36,9 @@ services:
       - ./volume/feature-scale:/tmp/Data/feature-scale:rw
     command: python index.py --x-train /tmp/Data/feature-scale/x-train.csv --y-train /tmp/Data/preprocess/y-train.csv --model /tmp/Data/ann-train/model.pickle
   ann-test:
-    build: ./components/neural-network/test
+    image: gcr.io/niveustraining/taxi-dataset/neural-network/test@sha256:1dbfb402b2d6371c083aedb67dc9336dee5cc22a918f3009c5939484ffb05a72
     volumes:
       - ./volume/ann-train:/tmp/Data/ann-train:rw
       - ./volume/preprocess:/tmp/Data/preprocess:rw
       - ./volume/feature-scale:/tmp/Data/feature-scale:rw
-    command: python index.py --model /tmp/Data/ann-train/model.pickle --x-test /tmp/Data/feature-scale/x-test.csv --y-test /tmp/Data/preprocess/x-test.csv
+    command: python index.py --model /tmp/Data/ann-train/model.pickle --x-test /tmp/Data/feature-scale/x-test.csv --y-test /tmp/Data/preprocess/y-test.csv

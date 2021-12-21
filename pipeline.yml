@@ -2,7 +2,7 @@ apiVersion: argoproj.io/v1alpha1
 kind: Workflow
 metadata:
   generateName: chicago-taxi-dataset-
-  annotations: {pipelines.kubeflow.org/kfp_sdk_version: 1.8.10, pipelines.kubeflow.org/pipeline_compilation_time: '2021-12-17T16:49:57.073009',
+  annotations: {pipelines.kubeflow.org/kfp_sdk_version: 1.8.10, pipelines.kubeflow.org/pipeline_compilation_time: '2021-12-20T15:59:36.347436',
     pipelines.kubeflow.org/pipeline_spec: '{"name": "Chicago-taxi-dataset"}'}
   labels: {pipelines.kubeflow.org/kfp_sdk_version: 1.8.10}
 spec:
@@ -123,7 +123,7 @@ spec:
       command: [python, index.py, --x-train, /tmp/inputs/X_Train/data, --x-test, /tmp/inputs/X_Test/data,
         --X-train, /tmp/outputs/X_Train_Feature_Scaled/data, --X-test, /tmp/outputs/X_Test_Feature_Scaled/data,
         --standard-scaler, /tmp/outputs/Standard_Scaler/data]
-      image: gcr.io/niveustraining/taxi-dataset/feature-scale
+      image: gcr.io/niveustraining/taxi-dataset/feature-scale:latest
     inputs:
       artifacts:
       - {name: preprocess-X-Test, path: /tmp/inputs/X_Test/data}
@@ -142,12 +142,12 @@ spec:
           {"command": ["python", "index.py", "--x-train", {"inputPath": "X Train"},
           "--x-test", {"inputPath": "X Test"}, "--X-train", {"outputPath": "X Train
           Feature Scaled"}, "--X-test", {"outputPath": "X Test Feature Scaled"}, "--standard-scaler",
-          {"outputPath": "Standard Scaler"}], "image": "gcr.io/niveustraining/taxi-dataset/feature-scale"}},
+          {"outputPath": "Standard Scaler"}], "image": "gcr.io/niveustraining/taxi-dataset/feature-scale:latest"}},
           "inputs": [{"name": "X Train", "type": "LocalPath"}, {"name": "X Test",
           "type": "LocalPath"}], "name": "Feature Scale", "outputs": [{"name": "X
           Train Feature Scaled", "type": "LocalPath"}, {"name": "X Test Feature Scaled",
           "type": "LocalPath"}, {"name": "Standard Scaler", "type": "LocalPath"}]}',
-        pipelines.kubeflow.org/component_ref: '{"digest": "2c8570e7ce2d0177e09cea67016e1bb4c92aef751f95ed6d80bd8c40566daaed",
+        pipelines.kubeflow.org/component_ref: '{"digest": "7f23adc205e18324d9805617d2af3065eec0a169227706cae1a057ca9c8cc01f",
           "url": "components/feature-scale/feature-scale.yml"}'}
   - name: prepare-data
     container:
